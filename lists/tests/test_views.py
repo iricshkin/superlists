@@ -58,7 +58,7 @@ class ListViewTest(TestCase):
 
         self.client.post(
             f"/lists/{correct_list.id}/",
-            data={"item_text": "A new list item for an existing list"},
+            data={"text": "A new list item for an existing list"},
         )
 
         self.assertEqual(Item.objects.count(), 1)
@@ -72,14 +72,14 @@ class ListViewTest(TestCase):
         correct_list = List.objects.create()
         response = self.client.post(
             f"/lists/{correct_list.id}/",
-            data={"item_text": "A new list item for an existing list"},
+            data={"text": "A new list item for an existing list"},
         )
 
         self.assertRedirects(response, f"/lists/{correct_list.id}/")
 
     def test_validation_errors_are_sent_back_to_home_page_template(self):
         """Тест: ошибки валидации отсылаются назад в шаблон домашней страницы."""
-        response = self.client.post("/lists/new", data={"item_text": ""})
+        response = self.client.post("/lists/new", data={"text": ""})
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "home.html")
         expected_error = escape("You can't have an empty list item")
@@ -87,14 +87,14 @@ class ListViewTest(TestCase):
 
     def test_invalid_list_items_arent_saved(self):
         """Тест: сохраняются недопустимые элементы списка."""
-        self.client.post("/lists/new", data={"item_text": ""})
+        self.client.post("/lists/new", data={"text": ""})
         self.assertEqual(List.objects.count(), 0)
         self.assertEqual(Item.objects.count(), 0)
 
     def test_validation_errors_end_up_on_lists_page(self):
         """Тест: ошибки валидации оканчиваются на странице списков."""
         list_ = List.objects.create()
-        response = self.client.post(f"/lists/{list_.id}/", data={"item_text": ""})
+        response = self.client.post(f"/lists/{list_.id}/", data={"text": ""})
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "list.html")
         expected_error = escape("You can't have an empty list item")
