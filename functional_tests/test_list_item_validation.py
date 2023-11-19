@@ -1,10 +1,15 @@
 from .base import FunctionalTest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from lists.forms import DUPLICATE_ITEM_ERROR
 
 
 class ItemValidationTest(FunctionalTest):
     """Тест валидации элемента списка."""
+
+    def get_error_element(self):
+        """Получить элемент с ошибкой."""
+        return self.browser.find_element(By.CSS_SELECTOR, ".has-error")
 
     def test_cannot_add_empty_list_items(self):
         """Тест: нельзя добавлять пустые элементы списка."""
@@ -62,7 +67,26 @@ class ItemValidationTest(FunctionalTest):
         # Она видит полезное сообщение об ошибке
         self.wait_for(
             lambda: self.assertEqual(
-                self.browser.find_element(By.CSS_SELECTOR, ".has_error").text,
-                "You've already got this in your list",
+                self.get_error_element().text,
+                [DUPLICATE_ITEM_ERROR],
             )
         )
+
+    def test_error_messages_are_cleared_on_input(self):
+        """Тест: сообщения об ошибках очищаются при вводе."""
+
+        # Эдит начинает список и вызывает ошибку валидации:
+        self.browser.get(self.live_server_url)
+        self.get_item_input_box().send_keys("Banter too thick")
+        self.get_item_input_box().send_keys(Keys.ENTER)
+        self.wait_for_row_in_list_table("1: Banter too thick")
+        self.get_item_input_box().send_keys("Banter too thick")
+        self.get_item_input_box().send_keys(Keys.ENTER)
+
+        self.wait_for(lambda: self.assertTrue(self.get_error_element().is_displayed()))
+
+        # Она начинает набирать в поле ввода, чтобы очистить ошибку
+        self.get_item_input_box().send_keys("a")
+
+        # Она довольна от того, что сообщение об ошибке исчезает
+        self.wait_for(lambda: self.assertFalse(self.get_error_element().is_displayed()))
